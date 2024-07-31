@@ -1,8 +1,6 @@
 #!/bin/bash
 
-./requirements.sh
-
-sudo chmod +x gum-install.sh
+chmod +x gum-install.sh
 ./gum-install.sh > /dev/null 2>&1
 
 extract_package_names() {
