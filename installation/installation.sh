@@ -1,26 +1,56 @@
 #!/bin/bash
 
-packages=("git" "curl" "fzf" "vim" "htop")
-choice=$(gum choose "Download all packages" "Select packages individually")
+extract_package_names() {
+  find packages -mindepth 1 -maxdepth 1 -type d -exec basename {} \;
+}
 
-if [ "$choice" == "Download all packages" ]; then
-  selected_packages=("${packages[@]}")
-else
-  selected_packages=($(gum choose --no-limit "${packages[@]}"))
-fi
+while true; do
+  packages=($(extract_package_names))
 
-echo "You have selected the following packages:"
-for package in "${selected_packages[@]}"; do
-  echo "- $package"
-done
+  choice=$(gum choose "all" "custom" "abort")
 
-if gum confirm "Do you want to proceed with downloading these packages?"; then
+  if [ "$choice" == "all" ]; then
+    selected_packages=("${packages[@]}")
+  elif [ "$choice" == "abort" ]; then
+    exit 1
+  else
+    selected_packages=($(gum choose --no-limit "${packages[@]}"))
+  fi
+
+  if [ ${#selected_packages[@]} -eq 0 ]; then
+    echo "No packages selected."
+    exit 1
+  fi
+
+  echo "You have selected the following packages:"
   for package in "${selected_packages[@]}"; do
-    echo "Downloading $package..."
-    curl -o "${package}.bin" https://ash-speed.hetzner.com/100MB.bin
-    echo "$package downloaded."
+    echo "- $package"
   done
-  echo "All selected packages have been downloaded."
-else
-  echo "Aborted."
-fi
+
+  if gum confirm "Do you want to proceed with these packages?"; then
+    clear
+    total_packages=${#selected_packages[@]}
+    completed=0
+
+    for package in "${selected_packages[@]}"; do
+      ((completed++))
+      progress="$completed/$total_packages packages installed"
+
+      gum spin --title "$progress" -- sleep 1
+
+      script_path="packages/$package/$package.sh"
+      if [ -f "$script_path" ]; then
+        chmod +x "$script_path"
+        if ./"$script_path" > /dev/null 2>&1; then
+          echo "- $package ✔"
+        else
+          echo "- $package ✘"
+        fi
+      else
+        echo "Script for package $script_path not found. Skipping."
+      fi
+    done
+    echo "All selected packages have been installed."
+    break
+  fi
+done
