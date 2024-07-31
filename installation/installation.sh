@@ -1,5 +1,8 @@
 #!/bin/bash
 
+sudo chmod +x gum-install.sh
+./gum-install.sh > /dev/null 2>&1
+
 extract_package_names() {
   find packages -mindepth 1 -maxdepth 1 -type d -exec basename {} \;
 }
@@ -36,7 +39,7 @@ while true; do
       ((completed++))
       progress="$completed/$total_packages packages installed"
 
-      gum spin --title "$progress" -- sleep 1
+      gum spin --title "$progress"
 
       script_path="packages/$package/$package.sh"
       if [ -f "$script_path" ]; then
