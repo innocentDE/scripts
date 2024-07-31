@@ -39,17 +39,24 @@ while true; do
       ((completed++))
       progress="$completed/$total_packages packages installed"
 
-      gum spin --title "$progress"
+      (gum spin --spinner "line" --title "$progress" -- sleep infinity) &
+      SPIN_PID=$!
 
       script_path="packages/$package/$package.sh"
       if [ -f "$script_path" ]; then
         chmod +x "$script_path"
         if ./"$script_path" > /dev/null 2>&1; then
+          kill $SPIN_PID
+          wait $SPIN_PID 2>/dev/null
           echo "- $package ✔"
         else
+          kill $SPIN_PID
+          wait $SPIN_PID 2>/dev/null
           echo "- $package ✘"
         fi
       else
+        kill $SPIN_PID
+        wait $SPIN_PID 2>/dev/null
         echo "Script for package $script_path not found. Skipping."
       fi
     done
